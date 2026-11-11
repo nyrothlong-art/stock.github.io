@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="km" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="browser-tab-title">Stock Inventory Ultimate Pro</title>
+  
+  <link id="dynamic-favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2306b6d4'><path d='M21 16.5l-9 5.25-9-5.25V7.5l9-5.25 9 5.25v9z'/></svg>">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="js/tailwind-config.js"></script>
+  
+  <!-- Stable CDNs -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-slate-950 text-slate-100 dark:bg-[#070b14] dark:text-slate-100 min-h-screen flex flex-col antialiased selection:bg-cyan-500 selection:text-white">
+
+  <div id="toast-wrapper" class="fixed top-5 right-5 z-50 flex flex-col gap-2.5 pointer-events-none"></div>
+
+  <!-- LOGIN MODAL -->
+  <div id="login-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-2xl p-4 transition-all duration-300">
+    <div id="login-card-container" class="glass-box border border-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl relative modal-pop">
+      <div class="text-center mb-6">
+        <div id="login-logo-box" class="w-16 h-16 bg-gradient-to-tr from-cyan-600 to-blue-600 rounded-2xl mx-auto flex items-center justify-center text-white mb-3 shadow-lg shadow-cyan-500/25 logo-animated">
+          <i data-lucide="boxes" class="w-8 h-8"></i>
+        </div>
+        <h2 id="login-app-title" class="text-2xl font-bold tracking-wide">Stock Inventory</h2>
+        <p class="text-xs text-slate-400 mt-1">សូមបញ្ចូលគណនីដើម្បីចូលប្រើប្រាស់</p>
+      </div>
+
+      <div id="login-error-banner" class="hidden mb-4 p-3 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-xs text-rose-300 flex items-center space-x-2">
+        <i data-lucide="alert-circle" class="w-4 h-4 flex-shrink-0 text-rose-400"></i>
+        <span id="login-error-text">ឈ្មោះអ្នកប្រើប្រាស់ ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវទេ!</span>
+      </div>
+
+      <form onsubmit="handleLoginSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1.5">ឈ្មោះអ្នកប្រើប្រាស់ (Username)</label>
+          <input type="text" id="input-username" required placeholder="admin" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1.5">ពាក្យសម្ងាត់ (Password)</label>
+          <input type="password" id="input-password" required placeholder="8888" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500">
+        </div>
+
+        <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-semibold py-3 rounded-xl shadow-lg transition flex items-center justify-center space-x-2">
+          <span>ចូលប្រព័ន្ធ (Login)</span>
+          <i data-lucide="log-in" class="w-4 h-4"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- NAVIGATION -->
+  <header class="bg-slate-900/90 border-b border-slate-800 backdrop-blur-xl sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-cyan-600 flex items-center justify-center text-white logo-animated">
+          <i data-lucide="boxes" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 id="app-title-display" class="text-base font-bold tracking-wide">Stock Inventory</h1>
+          <span class="text-[10px] text-emerald-400 font-mono flex items-center space-x-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+            <span>SYSTEM ONLINE</span>
+          </span>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <nav class="flex bg-slate-800 p-1 rounded-xl text-xs font-semibold">
+          <button id="nav-btn-inventory" onclick="switchNavTab('inventory')" class="px-3 py-1.5 rounded-lg bg-cyan-600 text-white">ស្តុកទំនិញ</button>
+          <button id="nav-btn-audit" onclick="switchNavTab('audit')" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">រាប់ស្តុក</button>
+          <button id="nav-btn-settings" onclick="switchNavTab('settings')" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white hidden">Settings</button>
+        </nav>
+
+        <div class="text-right hidden sm:block">
+          <p id="nav-username" class="text-xs font-semibold">Admin</p>
+          <span id="nav-userrole" class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-mono">ADMIN</span>
+        </div>
+
+        <button onclick="handleLogout()" class="p-2 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500/20">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN INVENTORY -->
+  <main id="tab-inventory" class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full space-y-6">
+    <!-- Stat Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div class="glass-box border rounded-2xl p-4">
+        <p class="text-[11px] text-slate-400">ទំនិញសរុប</p>
+        <h3 id="stat-total" class="text-lg font-bold font-mono">0</h3>
+      </div>
+      <div class="glass-box border rounded-2xl p-4">
+        <p class="text-[11px] text-emerald-400">មិនទាន់បើក (In Stock)</p>
+        <h3 id="stat-unopened" class="text-lg font-bold text-emerald-400 font-mono">0</h3>
+      </div>
+      <div class="glass-box border rounded-2xl p-4">
+        <p class="text-[11px] text-amber-400">បានបើករួច (Opened)</p>
+        <h3 id="stat-opened" class="text-lg font-bold text-amber-400 font-mono">0</h3>
+      </div>
+      <div class="glass-box border rounded-2xl p-4">
+        <p class="text-[11px] text-purple-400">អត្រាស្តុកសេសសល់</p>
+        <h3 id="stat-rate" class="text-lg font-bold text-purple-400 font-mono">0%</h3>
+      </div>
+    </div>
+
+    <!-- Scanner & List -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div class="lg:col-span-5 space-y-4">
+        <div class="glass-box border rounded-3xl p-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="font-bold text-sm">ម៉ាស៊ីនស្កេន</h2>
+            <div class="flex bg-slate-800 p-1 rounded-xl text-xs font-semibold">
+              <button id="btn-mode-in" onclick="changeMode('IN')" class="px-3 py-1.5 rounded-lg bg-cyan-600 text-white">ស្កេនចូល</button>
+              <button id="btn-mode-out" onclick="changeMode('OUT')" class="px-3 py-1.5 rounded-lg text-slate-400">ស្កេនបើក</button>
+            </div>
+          </div>
+
+          <div class="relative bg-black rounded-2xl overflow-hidden min-h-[250px] border border-slate-800 flex items-center justify-center">
+            <div id="reader" class="w-full"></div>
+            <div id="laser-line" class="laser-line-anim hidden"></div>
+            <div id="camera-idle" class="text-center p-6 space-y-2">
+              <i data-lucide="camera-off" class="w-8 h-8 text-slate-600 mx-auto"></i>
+              <p class="text-xs text-slate-500">កាមេរ៉ាមិនទាន់ដំណើរការ</p>
+            </div>
+          </div>
+
+          <div class="flex gap-2">
+            <button id="btn-cam-start" onclick="startScannerCamera()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl font-medium text-xs">បើកកាមេរ៉ា</button>
+            <button id="btn-cam-stop" onclick="stopScannerCamera()" class="hidden flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2.5 rounded-xl font-medium text-xs">បិទកាមេរ៉ា</button>
+          </div>
+
+          <div class="pt-2 border-t border-slate-800">
+            <label class="block text-xs text-slate-400 mb-1">វាយលេខ Tracking ដោយដៃ៖</label>
+            <div class="flex gap-2">
+              <input type="text" id="scan-manual-tracking-input" placeholder="បញ្ចូលលេខកូដ..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none">
+              <button onclick="handleScanManualSubmit()" class="bg-cyan-600 text-white px-4 py-2 rounded-xl text-xs font-semibold">អនុវត្ត</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="lg:col-span-7">
+        <div class="glass-box border rounded-3xl overflow-hidden flex flex-col h-full">
+          <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+            <h2 class="font-bold text-sm">បញ្ជីស្តុកជាក់ស្តែង</h2>
+            <button onclick="exportToExcel()" class="bg-emerald-600 text-white px-3 py-1.5 rounded-xl text-xs font-semibold">Export Excel</button>
+          </div>
+          <div class="overflow-x-auto flex-1 max-h-[450px] overflow-y-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-900 text-slate-400 uppercase border-b border-slate-800">
+                <tr>
+                  <th class="px-4 py-3">រូបភាព</th>
+                  <th class="px-4 py-3">Tracking</th>
+                  <th class="px-4 py-3">ស្ថានភាព</th>
+                  <th class="px-4 py-3">អ្នកបញ្ចូល</th>
+                  <th class="px-4 py-3 text-right">សកម្មភាព</th>
+                </tr>
+              </thead>
+              <tbody id="inventory-tbody" class="divide-y divide-slate-800"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- TAB AUDIT -->
+  <main id="tab-audit" class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full hidden space-y-6">
+    <div class="glass-box border rounded-3xl p-5">
+      <h2 class="text-base font-bold mb-4">រាប់ស្តុកជាក់ស្តែង (Stock Audit)</h2>
+      <div class="flex gap-2 mb-4">
+        <input type="text" id="audit-manual-input" placeholder="ស្កេន ឬវាយកូដផ្ទៀងផ្ទាត់..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-xs text-white">
+        <button onclick="handleAuditSubmit()" class="bg-emerald-600 text-white px-5 py-2 rounded-xl text-xs font-semibold">ផ្ទៀងផ្ទាត់</button>
+      </div>
+      <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-900 text-slate-400 border-b border-slate-800">
+            <tr>
+              <th class="px-4 py-2.5">Tracking</th>
+              <th class="px-4 py-2.5">ស្ថានភាព</th>
+              <th class="px-4 py-2.5">ម៉ោង</th>
+            </tr>
+          </thead>
+          <tbody id="audit-tbody" class="divide-y divide-slate-800"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <canvas id="hidden-canvas" class="hidden"></canvas>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
